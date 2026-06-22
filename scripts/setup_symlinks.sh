@@ -2,9 +2,9 @@
 # scripts/setup_symlinks.sh
 # Builds merged OpenCode instructions and deploys them to each repo.
 #
-# Deployment strategy:
-#   - AGENTS.md  → symlink (mklink on Windows, ln -sfn on Unix)
-#   - .opencode/ → cp -a    (directory merge; preserves user files like local overrides)
+# Deployment strategy (Windows-compatible):
+#   - AGENTS.md  → cp -f  (file copy; ln -s creates hardlinks on Windows, not symlinks)
+#   - .opencode/ → cp -a  (directory merge; preserves user files like local overrides)
 #   - specs/     → mklink /J junction on Windows, ln -sfn on Unix
 
 set -euo pipefail
@@ -35,39 +35,13 @@ log() {
   [ "$VERBOSE" != "--verbose" ] || echo "  $1"
 }
 
-# Deploy a file as a symlink.
-# On Windows we require mklink support so repos keep a single AGENTS.md source.
-deploy_file_link() {
-  local src_file="$1"
-  local dst_path="$2"
-  [ -f "$src_file" ] || return 0
-
-  rm -f "$dst_path"
-
-  # Try Windows file symlink via cmd.exe.
-  if command -v cygpath >/dev/null 2>&1; then
-    local win_src win_dst
-    win_src="$(cygpath -w "$src_file" 2>/dev/null || true)"
-    win_dst="$(cygpath -w "$dst_path" 2>/dev/null || true)"
-    if [ -n "$win_src" ] && [ -n "$win_dst" ]; then
-      if cmd //c mklink "$win_dst" "$win_src" >/dev/null 2>&1; then
-        log "Symlink: $dst_path -> $src_file"
-        return
-      fi
-
-      echo "ERROR: failed to create file symlink $dst_path -> $src_file" >&2
-      echo "Enable Windows Developer Mode or run with symlink permission." >&2
-      return 1
-    fi
-  fi
-
-  if ln -sfn "$src_file" "$dst_path" 2>/dev/null; then
-    log "Symlink: $dst_path -> $src_file"
-    return
-  fi
-
-  echo "ERROR: failed to create file symlink $dst_path -> $src_file" >&2
-  return 1
+# Deploy a file: simple copy (works on all platforms including Windows without admin).
+deploy_file() {
+  local src="$1"
+  local dst="$2"
+  [ -f "$src" ] || return 0
+  cp -f "$src" "$dst"
+  log "Copied: $dst"
 }
 
 # Merge a blueprint directory into a repo directory.
@@ -242,8 +216,8 @@ for repo in "${REPOS[@]}"; do
 
   merge_blueprint "$repo"
 
-  deploy_dir      "$MERGED_ROOT/$repo/.opencode" "$repo_path/.opencode"
-  deploy_file_link "$MERGED_ROOT/$repo/AGENTS.md" "$repo_path/AGENTS.md"
+  deploy_dir  "$MERGED_ROOT/$repo/.opencode" "$repo_path/.opencode"
+  deploy_file "$MERGED_ROOT/$repo/AGENTS.md" "$repo_path/AGENTS.md"
   deploy_shared_dir "$BLUEPRINT_ROOT/specs" "$repo_path/specs"
 
   ensure_gitignore_entry "$repo_path" ".opencode"
@@ -258,7 +232,7 @@ done
 
 merge_workspace
 deploy_dir  "$MERGED_ROOT/workspace/.opencode" "$WORKSPACE_ROOT/.opencode"
-deploy_file_link "$MERGED_ROOT/workspace/AGENTS.md" "$WORKSPACE_ROOT/AGENTS.md"
+deploy_file "$MERGED_ROOT/workspace/AGENTS.md" "$WORKSPACE_ROOT/AGENTS.md"
 
 echo "✓ Setup complete: $REPOS_PROCESSED repos configured"
 if [ "$VERBOSE" = "--verbose" ]; then
