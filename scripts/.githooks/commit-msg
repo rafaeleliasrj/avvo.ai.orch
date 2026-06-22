@@ -1,0 +1,67 @@
+#!/bin/sh
+# commit-msg hook: enforces [AI-ASSISTED] or [NO-AI] tagging policy
+#
+# Priority order:
+#   1. Tag already present → pass through unchanged
+#   2. Flag --ai / --no-ai in message → replace with proper tag
+#   3. Neither → prompt the developer interactively
+
+COMMIT_FILE="$1"
+COMMIT_MSG=$(cat "$COMMIT_FILE")
+
+# Skip merge commits
+if [ -f ".git/MERGE_HEAD" ]; then
+  exit 0
+fi
+
+# ─── 1. Tag already present ───────────────────────────────────────────────────
+if echo "$COMMIT_MSG" | grep -qE "\[(AI-ASSISTED|NO-AI)\]"; then
+  exit 0
+fi
+
+# ─── 2. Inline flag --ai / --no-ai ────────────────────────────────────────────
+if echo "$COMMIT_MSG" | grep -qE "\-\-no-ai"; then
+  NEW_MSG=$(echo "$COMMIT_MSG" | sed 's/ \?--no-ai//')
+  printf "%s [NO-AI]" "$NEW_MSG" > "$COMMIT_FILE"
+  echo "✔ Tagged as [NO-AI]"
+  exit 0
+fi
+
+if echo "$COMMIT_MSG" | grep -qE "\-\-ai"; then
+  NEW_MSG=$(echo "$COMMIT_MSG" | sed 's/ \?--ai//')
+  printf "%s [AI-ASSISTED]" "$NEW_MSG" > "$COMMIT_FILE"
+  echo "✔ Tagged as [AI-ASSISTED]"
+  exit 0
+fi
+
+# ─── 3. Interactive prompt ────────────────────────────────────────────────────
+exec < /dev/tty
+
+echo ""
+echo "┌─────────────────────────────────────────────┐"
+echo "│         AI Usage Policy — Commit Tag         │"
+echo "└─────────────────────────────────────────────┘"
+echo ""
+echo "  Did you use AI assistance in this commit?"
+echo "  (y = [AI-ASSISTED] / n = [NO-AI] / a = abort)"
+echo ""
+printf "  Your answer [y/n/a]: "
+read ANSWER
+echo ""
+
+case "$ANSWER" in
+  y|Y)
+    printf "%s [AI-ASSISTED]" "$COMMIT_MSG" > "$COMMIT_FILE"
+    echo "✔ Tagged as [AI-ASSISTED]"
+    exit 0
+    ;;
+  n|N)
+    printf "%s [NO-AI]" "$COMMIT_MSG" > "$COMMIT_FILE"
+    echo "✔ Tagged as [NO-AI]"
+    exit 0
+    ;;
+  a|A|*)
+    echo "✘ Commit aborted."
+    exit 1
+    ;;
+esac

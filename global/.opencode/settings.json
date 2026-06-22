@@ -1,0 +1,48 @@
+{
+  "hooks": {
+    "PreToolUse": [
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(~/.config/opencode/dev-timers/timer.sh*)",
+
+      "Edit(**/Backend/**)",
+      "Write(**/Backend/**)",
+      "Edit(**/Frontend/**)",
+      "Write(**/Frontend/**)",
+      "Edit(**/app/**)",
+      "Write(**/app/**)",
+      "Edit(**/iob.pme.playwrite.automation/**)",
+      "Write(**/iob.pme.playwrite.automation/**)",
+      "Edit(**/iob.pme.rpa/**)",
+      "Write(**/iob.pme.rpa/**)",
+
+      "Bash(ls*)",
+      "Bash(rtk ls*)",
+      "Bash(wc*)",
+      "Bash(rtk wc*)",
+      "Bash(find*)",
+      "Bash(rtk find*)",
+      "Bash(tree*)",
+      "Bash(rtk tree*)",
+      "Bash(stat*)",
+      "Bash(rtk stat*)",
+      "Bash(file*)",
+      "Bash(rtk file*)",
+
+      "Bash(git status*)",
+      "Bash(rtk git status*)",
+      "Bash(git diff*)",
+      "Bash(rtk git diff*)",
+      "Bash(git log*)",
+      "Bash(rtk git log*)",
+      "Bash(git show*)",
+      "Bash(rtk git show*)",
+      "Bash(git blame*)",
+      "Bash(rtk git blame*)",
+      "Bash(git ls-files*)",
+      "Bash(rtk git ls-files*)"
+    ]
+  }
+}
