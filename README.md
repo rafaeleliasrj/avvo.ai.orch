@@ -17,7 +17,7 @@
 Each target repository receives generated OpenCode assets:
 
 - `.opencode/` merged from `global/.opencode/` plus any repo-specific overlay
-- `AGENTS.md` merged from `global/AGENTS.md`, shared references, and any repo-specific `AGENTS.md`
+- `AGENTS.md` copied from a merged file built from `global/AGENTS.md`, shared references, and any repo-specific `AGENTS.md`
 - `specs/` linked back to the shared spec repository
 
 These generated artifacts are managed by this repository and should not be edited by hand in consumer repos.
