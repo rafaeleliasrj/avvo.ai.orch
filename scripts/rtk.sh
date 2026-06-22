@@ -14,6 +14,10 @@ set -euo pipefail
 RTK_INSTALL_URL="https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh"
 OPENCODE_CONFIG_DIR="${HOME}/.config/opencode"
 
+# RTK's installer places the binary here by default on Unix-like systems.
+PATH="${HOME}/.local/bin:${PATH}"
+export PATH
+
 color_red()    { printf "\033[31m%s\033[0m" "$1"; }
 color_green()  { printf "\033[32m%s\033[0m" "$1"; }
 color_yellow() { printf "\033[33m%s\033[0m" "$1"; }
