@@ -88,6 +88,93 @@ Ao gerar codigo para este projeto, preserve a organizacao feature-based observad
 - O projeto suporta modos diferentes de API, incluindo mock mode e modo real.
 - Nao hardcode endpoints fora das camadas de `lib/` e `services/`.
 
+## Dominio Principal da UI
+
+O frontend representa uma jornada de marketplace de passeios embarcados. As features observadas se organizam em torno de:
+
+- autenticacao
+- listings
+- tours publicos
+- bookings
+- finance
+- chat
+- reviews
+- dashboard do proprietario
+
+Mudancas de UI devem respeitar essa divisao e manter coerencia com os contratos e estados do backend.
+
+## Regras de Dominio por Feature
+
+### Auth
+
+- Login, cadastro, sessao atual e logout sao fluxos base.
+- Algumas jornadas, como reservar e acessar area protegida, dependem de autenticacao previa.
+
+### Listings
+
+- O dono cria e gerencia anuncios.
+- O formulario observado agrega dados do barco e do anuncio no mesmo fluxo.
+- Existem dois tipos principais de anuncio:
+  - `private tour`
+  - `group tour`
+- O tipo escolhido altera os campos obrigatorios e a experiencia do formulario.
+- Extras sao relevantes no fluxo privativo.
+- Periodos e preco por pessoa sao relevantes no fluxo coletivo.
+
+### Tours
+
+- O catalogo publico mostra apenas passeios disponiveis/publicos.
+- Busca, filtros, capacidade, disponibilidade e calendario fazem parte da experiencia principal.
+- Em passeio coletivo, o usuario escolhe periodo e quantidade de lugares.
+- A tela deve deixar claro quando o usuario precisa autenticar para reservar.
+
+### Bookings
+
+- A reserva tem papel central tanto para cliente quanto para proprietario.
+- O proprietario acompanha reservas recebidas, confirma ou rejeita quando aplicavel e conversa com o cliente.
+- O frontend expoe estados como pendente, confirmado, cancelado e aguardando aprovacao.
+- Ha fluxo de pre-reserva e aprovacao do proprietario em partes da experiencia.
+
+### Payment
+
+- O frontend apresenta ao menos pagamento por cartao e PIX.
+- O usuario precisa receber feedback claro para pagamento pendente, confirmado e erro.
+- PIX exige experiencia de QR code/copia de codigo.
+- A confirmacao financeira conversa com o estado da reserva, nao e um fluxo isolado.
+
+### Chat
+
+- O chat esta contextualizado na reserva.
+- A conversa entre cliente e proprietario e parte do fluxo operacional de booking.
+
+### Reviews
+
+- Reviews sao enviadas apos a experiencia e dependem do contexto correto da reserva/passeio.
+
+## Area do Proprietario
+
+- O dashboard agrega anuncios, reservas, financeiro e operacao do dono.
+- Ao criar novas telas de owner area, preserve esse recorte administrativo.
+- Evite misturar componentes de uso publico com componentes internos do proprietario sem necessidade.
+
+## Estados e Feedbacks de Negocio
+
+- Textos e feedbacks ja cobrem estados de reserva, aprovacao, pagamento, rejeicao e sucesso.
+- Ao adicionar novos estados, atualize os dicionarios de i18n e mantenha a mesma semantica entre frontend e backend.
+- Feedbacks como `toast`, mensagens de erro e labels de status devem refletir estados reais do dominio.
+
+## Regras de Integracao com Backend
+
+- O frontend depende fortemente dos contratos de `listings`, `tours`, `bookings`, `payment`, `chat` e `auth`.
+- Se a API retornar formatos especificos de dominio, preserve mappers dedicados entre contrato de API e modelo de UI.
+- Campos que espelham contrato do backend podem usar naming coerente com o contrato; o restante deve seguir o padrao do frontend.
+
+## i18n de Dominio
+
+- O dominio funcional ja esta espalhado por namespaces como `listing`, `bookings`, `tours`, `payment`, `chat`, `reviews`, `financial` e `auth`.
+- Novas strings de negocio devem entrar no namespace correto.
+- Nao introduza labels hardcoded para status, metodos de pagamento, modalidades de passeio ou acoes do proprietario.
+
 ## Layout e Providers
 
 - `src/app/layout.tsx` compoe `QueryProvider`, tema, linguagem e toaster.

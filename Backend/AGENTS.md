@@ -95,6 +95,104 @@ Ao gerar codigo para este projeto, preserve essa divisao. Nao misture responsabi
 - Nao hardcode segredos, URLs sensiveis ou credenciais.
 - Clientes HTTP tipados e servicos externos devem ficar encapsulados na Infrastructure.
 
+## Dominio Principal
+
+O backend representa uma plataforma de marketplace de passeios embarcados. Os blocos principais observados sao:
+
+- autenticacao e perfis de usuario
+- embarcacoes
+- anuncios de passeio
+- reservas
+- pagamentos
+- reviews
+- chat vinculado a reserva
+
+Ao implementar mudancas, preserve a consistencia entre esses fluxos e trate `Booking` e `Payment` como agregados centrais do ciclo operacional.
+
+## Perfis de Usuario
+
+- `BoatOwner`: cadastra e gerencia embarcacoes e anuncios, acompanha reservas e pode interagir com clientes.
+- `Customer`: navega por anuncios publicos, realiza reservas, paga e avalia.
+- `Admin`: aprova ou rejeita embarcacoes e atua nos fluxos administrativos.
+
+As autorizacoes e regras de acesso devem refletir claramente esse recorte.
+
+## Regras de Embarcacao e Anuncio
+
+- Um dono pode possuir multiplas embarcacoes.
+- Cada embarcacao precisa ter identificacao unica.
+- O ciclo observado da embarcacao e `Pending -> Approved -> Active`.
+- Apenas embarcacoes aprovadas/ativas podem sustentar anuncios publicos.
+- O anuncio pode ser `private_tour` ou `group_tour`.
+- O tipo do anuncio impacta preco, capacidade, extras e periodos disponiveis.
+- O tipo do anuncio nao deve ser tratado como algo livremente mutavel depois de criado se isso quebrar o fluxo existente.
+
+## Criacao Integrada de Listing
+
+O fluxo principal observado cria `Boat` e `Listing` juntos a partir do endpoint de listagem.
+
+Ao tocar esse fluxo:
+
+- considere que o payload integrado pode incluir dados do barco, anuncio, extras e periodos
+- preserve consistencia transacional entre os artefatos criados
+- mantenha `extras` associados ao fluxo de passeio privativo
+- mantenha `periods` associados ao fluxo de passeio coletivo
+
+## Regras de Booking
+
+- `Booking` concentra o agendamento do passeio.
+- O agendamento observado fica no proprio booking, com campos como data e horario.
+- O sistema deve validar disponibilidade, conflito de agenda e capacidade.
+- Em modalidades por assento, o numero de vagas disponiveis e uma regra central.
+- O mesmo barco nao deve aceitar reservas sobrepostas em horarios conflitantes.
+
+## Estados de Booking
+
+Os estados observados incluem ao menos:
+
+- `Scheduled`
+- `Confirmed`
+- `InProgress`
+- `Completed`
+- `Cancelled`
+- `Suspended`
+
+Mudancas nessas transicoes exigem cuidado porque impactam pagamento, aprovacao do proprietario, chat e experiencia no frontend.
+
+## Regras de Pagamento
+
+- O gateway principal observado e Asaas.
+- Ha suporte para `PIX`, `boleto`, `credit card` e fluxos especiais de confirmacao manual.
+- Pagamento e fortemente acoplado a reserva.
+- O sistema aplica split automatico entre plataforma e dono da embarcacao.
+- Dados sensiveis de cartao nao devem ser armazenados fora do modelo seguro observado.
+- Eventos de webhook atualizam estados financeiros e podem refletir em estados do booking.
+
+## Relacao Booking x Payment
+
+- Antes de criar pagamento, valide a reserva.
+- A confirmacao financeira altera o fluxo operacional da reserva.
+- Expiracao, estorno e chargeback sao eventos de dominio relevantes, nao apenas detalhes de infraestrutura.
+
+## Reviews e Chat
+
+- `Review` esta vinculada ao fluxo de reserva concluida.
+- `ChatMessage` esta vinculado ao contexto da reserva entre cliente e dono.
+- Evite modelar chat ou review como fluxo solto sem referencia ao booking quando o caso continuar pertencendo a esse contexto.
+
+## Internacionalizacao e Mensagens de Dominio
+
+- O backend centraliza mensagens em recursos tipados.
+- Novas mensagens de negocio devem seguir o padrao de chaves por categoria.
+- Nao espalhe strings literais de erro e validacao em handlers ou services.
+
+## Ao Alterar Casos de Uso de Negocio
+
+- valide impacto em estados de `Boat`, `Listing`, `Booking` e `Payment`
+- valide impacto em mensagens traduzidas
+- valide impacto em busca publica, disponibilidade e aprovacao
+- valide se a mudanca exige ajuste em webhook, split, notificacoes ou chat
+
 ## Testabilidade
 
 - Estruture codigo para mockar repositorios e servicos por interface.
